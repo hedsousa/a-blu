@@ -6,55 +6,80 @@
   * @date    06-May-2016
   * @brief   Main program body
   ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
-  *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
-  ******************************************************************************
   */
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/** @addtogroup STM32F4xx_HAL_Examples
-  * @{
-  */
-
-/** @addtogroup Templates
-  * @{
-  */
-
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+BD_ADDR_t Bd_Addr_Test;
+Link_Key_t Link_Key_Test;
+LinkKeyInfo_t LinkKey_Str_Test;
+
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 static void Error_Handler(void);
+void LCD_PrintMessageAtLine(uint8_t* message, int line, int color);
 
 /* Private functions ---------------------------------------------------------*/
+
+void LCD_PrintMessageAtLine(uint8_t* message, int line, int color){
+	BSP_LCD_Clear(color);
+	BSP_LCD_DisplayStringAtLine(line, message);
+}
+
+static void LCD_Init(){
+	BSP_LCD_Init();
+	BSP_LCD_Clear(LCD_COLOR_GREEN);
+	BSP_LCD_DisplayOff();
+	BSP_LCD_DisplayOn();
+	BSP_LCD_DisplayStringAtLine(4,(uint8_t*)"DEBUG");
+}
+
+void PrepareTestKeys(){
+	ASSIGN_BD_ADDR(Bd_Addr_Test, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08);
+	ASSIGN_LINK_KEY(Link_Key_Test, 0x00, 0x00, 0x00, 0x00, 0x00,0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08 );
+}
+
+void KeyLogger_Tests(void){
+	bool status = true;
+	
+	KeyLogger_Init();       /* Inicia a EEPROM e carrega a estrutura de dados */
+	//Add
+	status = KeyLogger_Add(Bd_Addr_Test, Link_Key_Test);
+	
+	//Exists
+	status = KeyLogger_Exists(Bd_Addr_Test);
+			
+	//Get
+	status = KeyLogger_Get(Bd_Addr_Test,&LinkKey_Str_Test);
+
+	//Remove
+	status = KeyLogger_Remove(Bd_Addr_Test);
+	
+	//Exists
+	status = KeyLogger_Exists(Bd_Addr_Test);
+	
+	//Add Str_test
+	status = KeyLogger_Add(LinkKey_Str_Test.BD_ADDR, LinkKey_Str_Test.LinkKey);
+	
+	//Clear
+	KeyLogger_Clear();
+	
+	status = KeyLogger_Exists(LinkKey_Str_Test.BD_ADDR);
+	
+	//Add
+	status = KeyLogger_Add(Bd_Addr_Test, Link_Key_Test);
+	
+	status = KeyLogger_Exists(LinkKey_Str_Test.BD_ADDR);
+
+	//Power off
+	//repete...
+}
+
 
 /**
   * @brief  Main program
@@ -63,29 +88,24 @@ static void Error_Handler(void);
   */
 int main(void)
 {
-
-  /* STM32F4xx HAL library initialization:
-       - Configure the Flash prefetch, Flash preread and Buffer caches
-       - Systick timer is configured by default as source of time base, but user 
-             can eventually implement his proper time base source (a general purpose 
-             timer for example or other time source), keeping in mind that Time base 
-             duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
-             handled in milliseconds basis.
-       - Low Level Initialization
-     */
   HAL_Init();
+  SystemClock_Config();  /* Configure the system clock to 168 MHz */
+	LCD_Init();
+	KeyLogger_Tests();
+	
+	/*Teste GPIO toggle*/
+  __HAL_RCC_GPIOG_CLK_ENABLE();		
+	GPIO_InitTypeDef  GPIO_InitStruct;
+  GPIO_InitStruct.Pin = (GPIO_PIN_6);
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FAST;
+  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
-  /* Configure the system clock to 168 MHz */
-  SystemClock_Config();
-
-
-  /* Add your application code here
-     */
-
-
-  /* Infinite loop */
   while (1)
   {
+		HAL_GPIO_TogglePin(GPIOG, GPIO_PIN_6);
+    HAL_Delay(100);
   }
 }
 
