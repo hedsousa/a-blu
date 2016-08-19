@@ -41,6 +41,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
+#include "stm324xg_eval_lcd.h"
+#include "stm324xg_eval_eeprom.h"
+#include "key_logger.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
