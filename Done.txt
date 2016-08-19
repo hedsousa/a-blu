@@ -1,0 +1,2 @@
+DONE - Cleanup project
+IN PROGRESS - Adding bluetopia
